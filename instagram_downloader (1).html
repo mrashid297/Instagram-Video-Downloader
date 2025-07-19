@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Video Downloader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .download-form {
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e1e1e1;
+            border-radius: 50px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            border-color: #405de6;
+            box-shadow: 0 0 0 3px rgba(64, 93, 230, 0.1);
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #405de6, #5851db, #833ab4);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(64, 93, 230, 0.3);
+        }
+
+        .download-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #405de6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border-left: 5px solid #28a745;
+        }
+
+        .video-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .video-info img {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .video-details h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .video-details p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .download-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .download-link {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .download-link:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+        }
+
+        .error {
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 5px solid #dc3545;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+            border-left: 5px solid #2196f3;
+        }
+
+        .instructions h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            color: #424242;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .download-links {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Instagram Video Downloader</h1>
+            <p>Download Instagram videos easily and quickly</p>
+        </div>
+
+        <form class="download-form" id="downloadForm">
+            <div class="input-group">
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    placeholder="Paste Instagram video URL here..."
+                    required
+                >
+            </div>
+            <button type="submit" class="download-btn" id="downloadBtn">
+                Download Video
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing your request...</p>
+        </div>
+
+        <div class="result" id="result">
+            <div class="video-info">
+                <img id="thumbnail" src="" alt="Video thumbnail">
+                <div class="video-details">
+                    <h3 id="videoTitle">Video Title</h3>
+                    <p id="videoDescription">Video description will appear here</p>
+                </div>
+            </div>
+            <div class="download-links" id="downloadLinks">
+                <!-- Download links will be populated here -->
+            </div>
+        </div>
+
+        <div class="error" id="error">
+            <strong>Error:</strong> <span id="errorMessage"></span>
+        </div>
+
+        <div class="instructions">
+            <h3>How to use:</h3>
+            <ol>
+                <li>Copy the Instagram video URL from your browser or app</li>
+                <li>Paste the URL in the input field above</li>
+                <li>Click "Download Video" button</li>
+                <li>Choose your preferred quality and download</li>
+            </ol>
+            <p><strong>Note:</strong> This tool only works with public Instagram posts.</p>
+        </div>
+    </div>
+
+    <script>
+        class InstagramDownloader {
+            constructor() {
+                this.form = document.getElementById('downloadForm');
+                this.urlInput = document.getElementById('urlInput');
+                this.downloadBtn = document.getElementById('downloadBtn');
+                this.loading = document.getElementById('loading');
+                this.result = document.getElementById('result');
+                this.error = document.getElementById('error');
+                
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                this.form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.processDownload();
+                });
+            }
+
+            showLoading() {
+                this.loading.style.display = 'block';
+                this.result.style.display = 'none';
+                this.error.style.display = 'none';
+                this.downloadBtn.disabled = true;
+            }
+
+            hideLoading() {
+                this.loading.style.display = 'none';
+                this.downloadBtn.disabled = false;
+            }
+
+            showError(message) {
+                this.error.style.display = 'block';
+                document.getElementById('errorMessage').textContent = message;
+                this.result.style.display = 'none';
+            }
+
+            showResult(data) {
+                this.result.style.display = 'block';
+                this.error.style.display = 'none';
+                
+                document.getElementById('thumbnail').src = data.thumbnail;
+                document.getElementById('videoTitle').textContent = data.title;
+                document.getElementById('videoDescription').textContent = data.description;
+                
+                const downloadLinks = document.getElementById('downloadLinks');
+                downloadLinks.innerHTML = '';
+                
+                data.downloadUrls.forEach((url, index) => {
+                    const link = document.createElement('a');
+                    link.href = url.url;
+                    link.className = 'download-link';
+                    link.download = `instagram_video_${Date.now()}.mp4`;
+                    link.target = '_blank';
+                    link.innerHTML = `📥 Download ${url.quality || 'Video'}`;
+                    downloadLinks.appendChild(link);
+                });
+            }
+
+            validateInstagramUrl(url) {
+                const patterns = [
+                    /^https?:\/\/(www\.)?instagram\.com\/p\/[A-Za-z0-9_-]+/,
+                    /^https?:\/\/(www\.)?instagram\.com\/reel\/[A-Za-z0-9_-]+/,
+                    /^https?:\/\/(www\.)?instagram\.com\/tv\/[A-Za-z0-9_-]+/
+                ];
+                
+                return patterns.some(pattern => pattern.test(url));
+            }
+
+            async processDownload() {
+                const url = this.urlInput.value.trim();
+                
+                if (!url) {
+                    this.showError('Please enter an Instagram URL');
+                    return;
+                }
+
+                if (!this.validateInstagramUrl(url)) {
+                    this.showError('Please enter a valid Instagram URL');
+                    return;
+                }
+
+                this.showLoading();
+
+                try {
+                    // Since we can't make actual backend calls in this demo,
+                    // we'll simulate the API response
+                    await this.simulateApiCall();
+                    
+                    // In a real implementation, you would call your backend:
+                    // const response = await fetch('/api/download', {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json' },
+                    //     body: JSON.stringify({ url: url })
+                    // });
+                    // const data = await response.json();
+                    
+                    const mockData = {
+                        title: "Instagram Video",
+                        description: "Downloaded from Instagram",
+                        thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='%23405de6'%3E%3Cpath d='M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z'/%3E%3C/svg%3E",
+                        downloadUrls: [
+                            { url: "#", quality: "HD" },
+                            { url: "#", quality: "SD" }
+                        ]
+                    };
+                    
+                    this.showResult(mockData);
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.showError('Failed to process the video. Please try again.');
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            async simulateApiCall() {
+                // Simulate API delay
+                return new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+
+        // Initialize the downloader when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new InstagramDownloader();
+        });
+    </script>
+</body>
+</html>
